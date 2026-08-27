@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from calculators import calculate_acr
+from database import db
 from keyboards import (
     get_cancel_keyboard,
     get_recalc_inline_keyboard,
@@ -126,6 +127,16 @@ async def process_acr_cr_value(message: Message, state: FSMContext):
     cr_unit = data["creatinine_unit"]
 
     acr_res = calculate_acr(alb_val, alb_unit, cr_val, cr_unit)
+
+    # Маълумотлар базасига қайд қилиш
+    if message.from_user:
+        await db.log_calculation(
+            user_id=message.from_user.id,
+            calc_type="acr",
+            acr_val=acr_res.acr_mg_g,
+            stage=acr_res.albuminuria_stage,
+            risk=None
+        )
 
     # Эможи белгиси
     if acr_res.albuminuria_stage == "A1":
