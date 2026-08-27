@@ -11,6 +11,7 @@ from calculators import (
     calculate_cockcroft_gault,
     get_gfr_stage,
 )
+from database import db
 from keyboards import (
     get_blood_creatinine_unit_keyboard,
     get_cancel_keyboard,
@@ -144,6 +145,16 @@ async def process_gfr_bcr_value(message: Message, state: FSMContext):
     cg_crcl = calculate_cockcroft_gault(age, weight, creatinine, unit, is_female)
     ckd_epi = calculate_ckd_epi_2021(age, creatinine, unit, is_female)
     gfr_stage, gfr_desc = get_gfr_stage(ckd_epi)
+
+    # Маълумотлар базасига қайд қилиш
+    if message.from_user:
+        await db.log_calculation(
+            user_id=message.from_user.id,
+            calc_type="gfr",
+            gfr_val=ckd_epi,
+            stage=gfr_stage,
+            risk=None
+        )
 
     gender_str = "Аёл" if is_female else "Эркак"
     unit_str = "мкмоль/л" if unit == "umol_l" else "мг/дл"
