@@ -7,15 +7,35 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from config import settings
+from database import db
 from keyboards import get_main_menu_keyboard
 
 common_router = Router()
 
 
+def check_is_admin(user_id: int) -> bool:
+    if not settings.admin_ids:
+        return True
+    return user_id in settings.admin_ids
+
+
 @common_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    """/start буйруғига жавоб."""
+    """/start буйруғига жавоб ва фойдаланувчини базага ёзиш."""
     await state.clear()
+    
+    # Фойдаланувчини маълумотлар базасига қўшиш/янгилаш
+    if message.from_user:
+        await db.add_or_update_user(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name,
+            last_name=message.from_user.last_name
+        )
+
+    is_admin = check_is_admin(message.from_user.id if message.from_user else 0)
+
     welcome_text = (
         "👋 **Ассалому алайкум!**\n\n"
         "Ушбу ихтисослаштирилган тиббий бот қуйидагиларни ҳисоблаш ва баҳолашга ёрдам беради:\n\n"
@@ -25,12 +45,12 @@ async def cmd_start(message: Message, state: FSMContext):
         "🔹 **Сийдикдаги Альбумин/Креатинин нисбати (АКН / ACR)**:\n"
         "   — Микроальбуминурия ва Макроальбуминурияни аниқлаш (A1, A2, A3)\n"
         "🔹 **Сурункали буйрак касаллиги (СБК / ХБП) KDIGO таснифи**:\n"
-        "   — Касаллик босқичи (G1–G5 va A1–A3) ва асоратлар хавф даражаси\n\n"
+        "   — Касаллик босқичи (G1–G5 ва A1–A3) ва асоратлар хавф даражаси\n\n"
         "👇 _Керакли бўлимни қуйидаги тугмалардан танланг:_"
     )
     await message.answer(
         welcome_text,
-        reply_markup=get_main_menu_keyboard(),
+        reply_markup=get_main_menu_keyboard(is_admin=is_admin),
         parse_mode="Markdown"
     )
 
@@ -39,6 +59,10 @@ async def cmd_start(message: Message, state: FSMContext):
 @common_router.message(F.text == "ℹ️ Бот ҳақида / Қўлланма")
 async def cmd_help(message: Message):
     """Қўлланма ва бот ҳақида маълумот."""
+    if message.from_user:
+        await db.add_or_update_user(message.from_user.id, message.from_user.username, message.from_user.first_name, message.from_user.last_name)
+
+    is_admin = check_is_admin(message.from_user.id if message.from_user else 0)
     help_text = (
         "📖 **Ботдан фойдаланиш қўлланмаси**\n\n"
         "1️⃣ **Тўлиқ текширув**: Беморнинг ёши, вазни, жинси, қондаги креатинин миқдори "
@@ -49,12 +73,16 @@ async def cmd_help(message: Message):
         "⚠️ **Муҳим эслатма**: Ушбу бот клиник қарор қабул қилишда шифокорларга ва беморларга кўмакчи "
         "сифатида яратилган бўлиб, расмий ташхис ўрнини босмайди. Якуний хулоса учун мутахассис (нефролог/терапевт) билан маслаҳатлашинг!"
     )
-    await message.answer(help_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+    await message.answer(help_text, reply_markup=get_main_menu_keyboard(is_admin=is_admin), parse_mode="Markdown")
 
 
 @common_router.message(F.text == "📊 KDIGO СБК жадвали")
 async def show_kdigo_table(message: Message):
     """KDIGO СБК таснифи ва хавф матрицаси жадвали."""
+    if message.from_user:
+        await db.add_or_update_user(message.from_user.id, message.from_user.username, message.from_user.first_name, message.from_user.last_name)
+
+    is_admin = check_is_admin(message.from_user.id if message.from_user else 0)
     table_text = (
         "📊 **KDIGO бўйича СБК (ХБП) Хавф Матрицаси**\n\n"
         "**КФТ босқичлари (мл/мин/1.73м²):**\n"
@@ -74,7 +102,7 @@ async def show_kdigo_table(message: Message):
         "🟧 **Юқори хавф**: G1A3, G2A3, G3aA2, G3bA1\n"
         "🟥 **Жуда юқори хавф**: G3aA3, G3bA2, G3bA3, G4(A1-A3), G5(A1-A3)"
     )
-    await message.answer(table_text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+    await message.answer(table_text, reply_markup=get_main_menu_keyboard(is_admin=is_admin), parse_mode="Markdown")
 
 
 @common_router.message(Command("cancel"))
@@ -82,9 +110,10 @@ async def show_kdigo_table(message: Message):
 async def cmd_cancel(message: Message, state: FSMContext):
     """Ҳолатни бекор қилиб асосий менюга қайтиш."""
     await state.clear()
+    is_admin = check_is_admin(message.from_user.id if message.from_user else 0)
     await message.answer(
         "❌ Амал бекор қилинди. Асосий менюга қайтдингиз.",
-        reply_markup=get_main_menu_keyboard()
+        reply_markup=get_main_menu_keyboard(is_admin=is_admin)
     )
 
 
@@ -92,10 +121,11 @@ async def cmd_cancel(message: Message, state: FSMContext):
 async def cb_cancel(callback: CallbackQuery, state: FSMContext):
     """Inline бекор қилиш тугмаси."""
     await state.clear()
+    is_admin = check_is_admin(callback.from_user.id)
     await callback.message.delete()
     await callback.message.answer(
         "❌ Ҳисоблаш бекор қилинди.",
-        reply_markup=get_main_menu_keyboard()
+        reply_markup=get_main_menu_keyboard(is_admin=is_admin)
     )
     await callback.answer()
 
@@ -104,8 +134,9 @@ async def cb_cancel(callback: CallbackQuery, state: FSMContext):
 async def cb_main_menu(callback: CallbackQuery, state: FSMContext):
     """Inline асосий менюга қайтиш."""
     await state.clear()
+    is_admin = check_is_admin(callback.from_user.id)
     await callback.message.answer(
         "🏠 Асосий меню:",
-        reply_markup=get_main_menu_keyboard()
+        reply_markup=get_main_menu_keyboard(is_admin=is_admin)
     )
     await callback.answer()
