@@ -2,6 +2,12 @@
 .env
 *.env
 
+# SQLite Databases
+*.db
+*.sqlite3
+*.sqlite
+bot_database.db
+
 # Python cache & bytecode
 __pycache__/
 *.py[cod]
