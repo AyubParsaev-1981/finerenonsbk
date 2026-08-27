@@ -17,6 +17,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
 from config import settings
+from database import db
 from handlers import main_router
 
 # Логларни созлаш
@@ -32,6 +33,7 @@ async def set_main_menu_commands(bot: Bot):
     """Телеграм ботнинг пастки буйруқлар менюсини созлаш."""
     commands = [
         BotCommand(command="start", description="Ботни ишга тушириш / Бош меню"),
+        BotCommand(command="stat", description="Бот статистикаси ва аналитика"),
         BotCommand(command="help", description="Қўлланма ва маълумот"),
         BotCommand(command="cancel", description="Ҳисоблашни бекор қилиш"),
     ]
@@ -52,6 +54,10 @@ async def main():
             "============================================================\n"
         )
         sys.exit(1)
+
+    # 1. Маълумотлар базасини ишга тушириш
+    await db.init_db()
+    logger.info("Маълумотлар базаси (SQLite) муваффақиятли уланди.")
 
     bot = Bot(token=token)
     dp = Dispatcher(storage=MemoryStorage())
