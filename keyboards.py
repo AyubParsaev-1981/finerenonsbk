@@ -10,8 +10,8 @@ from aiogram.types import (
 )
 
 
-def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Асосий меню клавиатураси."""
+def get_main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
+    """Асосий меню клавиатураси (Админ бўлса қўшимча тугма билан)."""
     kb = [
         [
             KeyboardButton(text="🩺 Тўлиқ текширув (СБК даражаси + КФТ + АКН)")
@@ -25,10 +25,31 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="ℹ️ Бот ҳақида / Қўлланма")
         ]
     ]
+    if is_admin:
+        kb.append([KeyboardButton(text="👑 Админ статистика ва бошқарув")])
+
     return ReplyKeyboardMarkup(
         keyboard=kb,
         resize_keyboard=True,
         is_persistent=True
+    )
+
+
+def get_admin_inline_keyboard() -> InlineKeyboardMarkup:
+    """Админ панели учун интерактив Inline тугмалар."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📊 Статистикани янгилаш", callback_data="admin_refresh_stat"),
+                InlineKeyboardButton(text="📥 CSV Экспорт", callback_data="admin_export_csv")
+            ],
+            [
+                InlineKeyboardButton(text="📢 Барчага хабар юбориш", callback_data="admin_broadcast")
+            ],
+            [
+                InlineKeyboardButton(text="🏠 Бош меню", callback_data="goto_main_menu")
+            ]
+        ]
     )
 
 
