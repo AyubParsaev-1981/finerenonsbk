@@ -33,3 +33,8 @@ class ACRCalcStates(StatesGroup):
     urine_albumin = State()
     urine_creatinine_unit = State()
     urine_creatinine = State()
+
+
+class AdminBroadcastStates(StatesGroup):
+    """Админ оммавий хабар тарқатиш ҳолати."""
+    waiting_for_message = State()
