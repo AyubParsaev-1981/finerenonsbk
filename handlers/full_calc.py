@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from calculators import calculate_acr, evaluate_ckd_kdigo
+from database import db
 from keyboards import (
     get_blood_creatinine_unit_keyboard,
     get_cancel_keyboard,
@@ -246,6 +247,17 @@ async def process_full_cr_value(message: Message, state: FSMContext):
         is_female=is_female,
         acr_result=acr_res
     )
+
+    # Маълумотлар базасига қайд қилиш
+    if message.from_user:
+        await db.log_calculation(
+            user_id=message.from_user.id,
+            calc_type="full",
+            gfr_val=ckd_res.gfr.ckd_epi,
+            acr_val=acr_res.acr_mg_g,
+            stage=ckd_res.combined_stage,
+            risk=ckd_res.risk_level
+        )
 
     gender_str = "Аёл" if is_female else "Эркак"
     bcr_unit_str = "мкмоль/л" if bcr_unit == "umol_l" else "мг/дл"
