@@ -6,7 +6,7 @@ import asyncio
 import logging
 import sys
 
-# Windows консолида UTF-8 белгиларини тўғри кўрсатиш ва хатосиз ишлаш учун
+# Windows ва Linux консолида UTF-8 белгиларини тўғри кўрсатиш учун
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 if hasattr(sys.stderr, "reconfigure"):
@@ -42,15 +42,16 @@ async def main():
     """Ботни ишга туширувчи асосий асинхрон функция."""
     token = settings.bot_token
     if not token or token == "YOUR_BOT_TOKEN_HERE":
-        logger.warning(
+        logger.error(
             "\n"
             "============================================================\n"
-            "⚠️  ДИҚҚАТ! BOT_TOKEN ҳали кўрсатилмаган!\n"
-            "1. .env файлини яратинг ёки очинг.\n"
-            "2. BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ кўринишида киритинг.\n"
-            "   (Токенни Telegram да @BotFather орқали олиш мумкин)\n"
+            "❌ ХАТОЛИК: BOT_TOKEN топилмади ёки нотўғри!\n\n"
+            "Илтимос, сервер созламаларида (Environment Variables) ёки .env файлида\n"
+            "BOT_TOKEN ни кўрсатинг:\n"
+            "BOT_TOKEN=8516441457:AAHdQnLKCbB3EHlt-LoCY3QxeeXDFYinyoE\n"
             "============================================================\n"
         )
+        sys.exit(1)
 
     bot = Bot(token=token)
     dp = Dispatcher(storage=MemoryStorage())
